@@ -1,11 +1,13 @@
 # Schedule I Clock Overlay
 
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Game](https://img.shields.io/badge/Game-Schedule%20I-2ea44f)](https://store.steampowered.com/app/3164500/Schedule_I/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078d4?logo=windows)](https://github.com/Despical/ScheduleIClockOverlay/releases)
 
 A small mod that shows the in-game clock in the top-right corner.
 The overlay stays hidden while the game clock is unavailable, such as during loading or before entering gameplay.
+
+---
 
 ## For Players
 
@@ -19,6 +21,8 @@ Schedule I\Mods\ScheduleIClockOverlay.dll
 ```
 
 Start the game again. The clock appears in the top-right corner once the in-game time is available.
+
+---
 
 ## For Developers
 
@@ -46,9 +50,13 @@ For local testing, copy it into:
 C:\Path\To\Schedule I\Mods\
 ```
 
+---
+
 ## Notes
 
 If **BepInEx** is also installed in the same game folder, remove it before using MelonLoader. Running both loaders together can cause startup conflicts.
+
+---
 
 ## To remove the mod
 
@@ -57,6 +65,16 @@ Delete:
 ```text
 Mods\ScheduleIClockOverlay.dll
 ```
+
+---
+
+## Security
+
+We prioritize user privacy and application integrity. Please do not open public issues for discovered vulnerabilities.
+
+Read our [SECURITY.md](SECURITY.md) for responsible disclosure reporting.
+
+---
 
 ## License
 This code is under the [GPL-3.0 License](http://www.gnu.org/licenses/gpl-3.0.html).
