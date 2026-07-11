@@ -4,10 +4,11 @@
 [![Game](https://img.shields.io/badge/Game-Schedule%20I-2ea44f)](https://store.steampowered.com/app/3164500/Schedule_I/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078d4?logo=windows)](https://github.com/Despical/ScheduleIClockOverlay/releases)
 
-A small mod that shows the in-game clock in the top-right corner.
+A small mod that shows the in-game clock and current day in the top-right corner.
 The overlay stays hidden while the game clock is unavailable, such as during loading or before entering gameplay.
 
 The clock includes the current day period, such as `7:55 AM (Morning)`, and turns red during curfew hours.
+The day counter appears in its own box below the clock, such as `Day 19`.
 
 ---
 
