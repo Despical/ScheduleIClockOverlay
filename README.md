@@ -1,5 +1,9 @@
 # Schedule I Clock Overlay
 
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Game](https://img.shields.io/badge/Game-Schedule%20I-2ea44f)](https://store.steampowered.com/app/3164500/Schedule_I/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078d4?logo=windows)](https://github.com/Despical/ScheduleIClockOverlay/releases)
+
 A small mod that shows the in-game clock in the top-right corner.
 The overlay stays hidden while the game clock is unavailable, such as during loading or before entering gameplay.
 
@@ -53,3 +57,8 @@ Delete:
 ```text
 Mods\ScheduleIClockOverlay.dll
 ```
+
+## License
+This code is under the [GPL-3.0 License](http://www.gnu.org/licenses/gpl-3.0.html).
+
+See the [LICENSE](LICENSE) file for required notices and attributions.
