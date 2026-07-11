@@ -13,16 +13,18 @@ namespace ScheduleIClockOverlay;
 
 public sealed class ClockMod : MelonMod
 {
-    private const float BoxWidth = 154f;
+    private const float BoxWidth = 238f;
     private const float BoxHeight = 42f;
     private const float Margin = 18f;
+    private static readonly Color DefaultTextColor = Color.white;
+    private static readonly Color CurfewTextColor = new(1f, 0.18f, 0.15f, 1f);
 
     private GUIStyle? labelStyle;
     private Texture2D? background;
     private object? timeManager;
     private Type? timeManagerType;
     private float nextLookupAt;
-    private string? lastClockText;
+    private ClockDisplay? lastClockDisplay;
 
     public override void OnInitializeMelon()
     {
@@ -38,22 +40,23 @@ public sealed class ClockMod : MelonMod
             timeManager = FindTimeManager();
         }
 
-        lastClockText = ReadClockText(timeManager);
+        lastClockDisplay = ReadClockDisplay(timeManager);
     }
 
     public override void OnGUI()
     {
-        if (string.IsNullOrWhiteSpace(lastClockText))
+        if (lastClockDisplay == null)
         {
             return;
         }
 
         EnsureGui();
+        labelStyle!.normal.textColor = lastClockDisplay.IsCurfew ? CurfewTextColor : DefaultTextColor;
 
         var x = Screen.width - BoxWidth - Margin;
         var rect = new Rect(x, Margin, BoxWidth, BoxHeight);
         GUI.DrawTexture(rect, background!, ScaleMode.StretchToFill);
-        GUI.Label(rect, lastClockText, labelStyle);
+        GUI.Label(rect, lastClockDisplay.Text, labelStyle);
     }
 
     private void EnsureGui()
@@ -66,9 +69,9 @@ public sealed class ClockMod : MelonMod
         labelStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 24,
+            fontSize = 22,
             fontStyle = FontStyle.Bold,
-            normal = { textColor = Color.white }
+            normal = { textColor = DefaultTextColor }
         };
 
         background = new Texture2D(1, 1);
@@ -136,7 +139,7 @@ public sealed class ClockMod : MelonMod
         return method?.MakeGenericMethod(type).Invoke(null, null);
     }
 
-    private string? ReadClockText(object? manager)
+    private ClockDisplay? ReadClockDisplay(object? manager)
     {
         if (manager == null)
         {
@@ -150,12 +153,12 @@ public sealed class ClockMod : MelonMod
             var value = ReadMember(manager, type, member);
             if (value is string text && !string.IsNullOrWhiteSpace(text))
             {
-                return text.Trim();
+                return CreateClockDisplay(text.Trim());
             }
         }
 
         var currentTime = ReadMember(manager, type, "CurrentTime") ?? ReadMember(manager, type, "currentTime");
-        var formatted = FormatCurrentTime(currentTime);
+        var formatted = CreateClockDisplay(currentTime);
         if (formatted != null)
         {
             return formatted;
@@ -165,7 +168,7 @@ public sealed class ClockMod : MelonMod
         var minute = ToInt(ReadMember(manager, type, "Minute") ?? ReadMember(manager, type, "CurrentMinute") ?? ReadMember(manager, type, "minute"));
         if (hour.HasValue && minute.HasValue)
         {
-            return $"{Mod(hour.Value, 24):00}:{Mod(minute.Value, 60):00}";
+            return CreateClockDisplay(Mod(hour.Value, 24), Mod(minute.Value, 60));
         }
 
         return null;
@@ -203,7 +206,7 @@ public sealed class ClockMod : MelonMod
         return null;
     }
 
-    private static string? FormatCurrentTime(object? value)
+    private static ClockDisplay? CreateClockDisplay(object? value)
     {
         var number = ToDouble(value);
         if (!number.HasValue)
@@ -212,26 +215,100 @@ public sealed class ClockMod : MelonMod
         }
 
         var raw = number.Value;
-        if (raw >= 0 && raw <= 2359 && Math.Abs(raw % 1) < 0.001)
+        if (raw >= 0 && raw <= 2400 && Math.Abs(raw % 1) < 0.001)
         {
             var time = (int)raw;
-            return $"{Mod(time / 100, 24):00}:{Mod(time % 100, 60):00}";
+            return CreateClockDisplay(Mod(time / 100, 24), Mod(time % 100, 60));
         }
 
         if (raw >= 0 && raw < 24)
         {
             var hour = (int)Math.Floor(raw);
             var minute = (int)Math.Round((raw - hour) * 60);
-            return $"{Mod(hour, 24):00}:{Mod(minute, 60):00}";
+            return CreateClockDisplay(Mod(hour, 24), Mod(minute, 60));
         }
 
         if (raw >= 0 && raw < 1440)
         {
             var totalMinutes = (int)Math.Round(raw);
-            return $"{Mod(totalMinutes / 60, 24):00}:{Mod(totalMinutes, 60):00}";
+            return CreateClockDisplay(Mod(totalMinutes / 60, 24), Mod(totalMinutes, 60));
         }
 
         return null;
+    }
+
+    private static ClockDisplay? CreateClockDisplay(string text)
+    {
+        if (TryParseClockText(text, out var hour, out var minute))
+        {
+            return CreateClockDisplay(hour, minute);
+        }
+
+        return null;
+    }
+
+    private static ClockDisplay CreateClockDisplay(int hour, int minute)
+    {
+        hour = Mod(hour, 24);
+        minute = Mod(minute, 60);
+        var totalMinutes = hour * 60 + minute;
+        var period = GetDayPeriod(totalMinutes);
+        var curfew = IsCurfew(totalMinutes);
+        return new ClockDisplay($"{Format12Hour(hour, minute)} ({period})", curfew);
+    }
+
+    private static bool TryParseClockText(string text, out int hour, out int minute)
+    {
+        foreach (var format in new[] { "h:mm tt", "hh:mm tt", "H:mm", "HH:mm" })
+        {
+            if (DateTime.TryParseExact(text, format, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var parsed))
+            {
+                hour = parsed.Hour;
+                minute = parsed.Minute;
+                return true;
+            }
+        }
+
+        hour = 0;
+        minute = 0;
+        return false;
+    }
+
+    private static string Format12Hour(int hour, int minute)
+    {
+        var suffix = hour < 12 ? "AM" : "PM";
+        var displayHour = hour % 12;
+        if (displayHour == 0)
+        {
+            displayHour = 12;
+        }
+
+        return $"{displayHour}:{minute:00} {suffix}";
+    }
+
+    private static string GetDayPeriod(int totalMinutes)
+    {
+        if (totalMinutes >= 6 * 60 && totalMinutes < 12 * 60)
+        {
+            return "Morning";
+        }
+
+        if (totalMinutes >= 12 * 60 && totalMinutes < 18 * 60)
+        {
+            return "Afternoon";
+        }
+
+        if (totalMinutes >= 18 * 60)
+        {
+            return "Night";
+        }
+
+        return "Late Night";
+    }
+
+    private static bool IsCurfew(int totalMinutes)
+    {
+        return totalMinutes >= 21 * 60 || totalMinutes < 5 * 60;
     }
 
     private static int? ToInt(object? value)
@@ -267,4 +344,6 @@ public sealed class ClockMod : MelonMod
         var result = value % divisor;
         return result < 0 ? result + divisor : result;
     }
+
+    private sealed record ClockDisplay(string Text, bool IsCurfew);
 }

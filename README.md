@@ -7,6 +7,8 @@
 A small mod that shows the in-game clock in the top-right corner.
 The overlay stays hidden while the game clock is unavailable, such as during loading or before entering gameplay.
 
+The clock includes the current day period, such as `7:55 AM (Morning)`, and turns red during curfew hours.
+
 ---
 
 ## For Players
