@@ -1,10 +1,10 @@
-# Schedule I Clock Overlay
+# ClockOverlay
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Game](https://img.shields.io/badge/Game-Schedule%20I-2ea44f)](https://store.steampowered.com/app/3164500/Schedule_I/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078d4?logo=windows)](https://github.com/Despical/ScheduleIClockOverlay/releases)
 
-A small mod that shows the in-game clock and current day in the top-right corner.
+A small Schedule I mod that shows the in-game clock and current day in the top-right corner.
 The overlay stays hidden while the game clock is unavailable, such as during loading or before entering gameplay.
 
 The clock includes the current day period, such as `7:55 AM (Morning)`, and turns red during curfew hours.
@@ -16,14 +16,22 @@ The day counter appears in its own box below the clock, such as `Day 19`.
 
 1. Install [MelonLoader](https://github.com/LavaGang/MelonLoader/releases) for Schedule I.
 2. Start the game once, then close it.
-3. Download `ScheduleIClockOverlay.dll` from the [releases page](https://github.com/Despical/ScheduleIClockOverlay/releases).
+3. Download `ClockOverlay.dll` from the [releases page](https://github.com/Despical/ScheduleIClockOverlay/releases).
 4. Copy the DLL into the game's `Mods` folder:
 
 ```text
-Schedule I\Mods\ScheduleIClockOverlay.dll
+Schedule I\Mods\ClockOverlay.dll
 ```
 
 Start the game again. The clock appears in the top-right corner once the in-game time is available.
+
+Press `G` in-game to open the overlay edit menu. While the menu is open, drag the clock and day counter with the mouse, toggle them on or off, reset their positions, or move them to a corner preset.
+
+The mod creates and updates this config file automatically:
+
+```text
+Schedule I\Mods\ClockOverlay.json
+```
 
 ---
 
@@ -44,7 +52,7 @@ dotnet publish .\src\ScheduleIClockOverlay\ScheduleIClockOverlay.csproj -c Relea
 The built DLL will be:
 
 ```text
-out\ScheduleIClockOverlay.dll
+out\ClockOverlay.dll
 ```
 
 For local testing, copy it into:
@@ -66,7 +74,7 @@ If **BepInEx** is also installed in the same game folder, remove it before using
 Delete:
 
 ```text
-Mods\ScheduleIClockOverlay.dll
+Mods\ClockOverlay.dll
 ```
 
 ---
