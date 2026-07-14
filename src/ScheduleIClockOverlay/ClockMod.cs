@@ -15,7 +15,7 @@ namespace ScheduleIClockOverlay;
 
 public sealed class ClockMod : MelonMod
 {
-    public const string ModVersion = "1.0.3";
+    public const string ModVersion = "1.0.4";
 
     private const float BoxWidth = 238f;
     private const float BoxHeight = 42f;
@@ -23,7 +23,8 @@ public sealed class ClockMod : MelonMod
     private const float Margin = 18f;
     private const float BoxGap = 6f;
     private const float MenuWidth = 340f;
-    private const float MenuHeight = 272f;
+    private const float MenuHeight = 342f;
+    private const float DefaultBackgroundOpacity = 0.58f;
     private const string ConfigFileName = "ClockOverlay.json";
     private const string LegacyConfigFileName = "ScheduleIClockOverlay.json";
 
@@ -40,9 +41,13 @@ public sealed class ClockMod : MelonMod
     private GUIStyle? labelStyle;
     private GUIStyle? menuLabelStyle;
     private GUIStyle? headerStyle;
+    private GUIStyle? sliderStyle;
+    private GUIStyle? sliderThumbStyle;
     private Texture2D? background;
     private Texture2D? editBackground;
     private Texture2D? menuBackground;
+    private Texture2D? sliderBackground;
+    private Texture2D? sliderThumb;
     private ClockDisplay? lastClockDisplay;
     private string? lastDayText;
     private OverlayConfig config = new();
@@ -113,7 +118,7 @@ public sealed class ClockMod : MelonMod
         {
             var clockText = lastClockDisplay?.Text ?? "Clock";
             labelStyle!.normal.textColor = editMode ? EditTextColor : lastClockDisplay!.IsCurfew ? CurfewTextColor : DefaultTextColor;
-            GUI.DrawTexture(clockRect, editMode ? editBackground! : background!, ScaleMode.StretchToFill);
+            DrawBackground(clockRect, config.Clock.BackgroundOpacity);
             GUI.Label(clockRect, clockText, labelStyle);
         }
 
@@ -121,7 +126,7 @@ public sealed class ClockMod : MelonMod
         {
             var dayText = string.IsNullOrWhiteSpace(lastDayText) ? "Day Counter" : lastDayText;
             labelStyle!.normal.textColor = editMode ? EditTextColor : DefaultTextColor;
-            GUI.DrawTexture(dayRect, editMode ? editBackground! : background!, ScaleMode.StretchToFill);
+            DrawBackground(dayRect, config.DayCounter.BackgroundOpacity);
             GUI.Label(dayRect, dayText, labelStyle);
         }
 
@@ -135,7 +140,8 @@ public sealed class ClockMod : MelonMod
 
     private void EnsureGui()
     {
-        if (labelStyle != null && background != null && editBackground != null && menuBackground != null)
+        if (labelStyle != null && background != null && editBackground != null && menuBackground != null &&
+            sliderStyle != null && sliderThumbStyle != null && sliderBackground != null && sliderThumb != null)
         {
             return;
         }
@@ -164,16 +170,54 @@ public sealed class ClockMod : MelonMod
         };
 
         background = new Texture2D(1, 1);
-        background.SetPixel(0, 0, new Color(0f, 0f, 0f, 0.58f));
+        background.SetPixel(0, 0, Color.black);
         background.Apply();
 
         editBackground = new Texture2D(1, 1);
-        editBackground.SetPixel(0, 0, new Color(0.08f, 0.08f, 0.02f, 0.72f));
+        editBackground.SetPixel(0, 0, new Color(0.08f, 0.08f, 0.02f, 1f));
         editBackground.Apply();
 
         menuBackground = new Texture2D(1, 1);
         menuBackground.SetPixel(0, 0, new Color(0.02f, 0.02f, 0.02f, 0.9f));
         menuBackground.Apply();
+
+        sliderBackground = new Texture2D(1, 1);
+        sliderBackground.SetPixel(0, 0, new Color(0.38f, 0.38f, 0.38f, 1f));
+        sliderBackground.Apply();
+
+        sliderThumb = new Texture2D(1, 1);
+        sliderThumb.SetPixel(0, 0, new Color(0.78f, 0.78f, 0.78f, 1f));
+        sliderThumb.Apply();
+
+        sliderStyle = new GUIStyle(GUI.skin.horizontalSlider)
+        {
+            fixedHeight = 8f,
+            normal = { background = null },
+            hover = { background = null },
+            active = { background = null }
+        };
+
+        sliderThumbStyle = new GUIStyle(GUI.skin.horizontalSliderThumb)
+        {
+            fixedWidth = 14f,
+            fixedHeight = 18f,
+            normal = { background = sliderThumb },
+            hover = { background = sliderThumb },
+            active = { background = sliderThumb }
+        };
+    }
+
+    private void DrawBackground(Rect rect, float opacity)
+    {
+        if (opacity <= 0f)
+        {
+            return;
+        }
+
+        var previousColor = GUI.color;
+        GUI.color = new Color(previousColor.r, previousColor.g, previousColor.b, previousColor.a * opacity);
+        GUI.DrawTexture(rect, editMode ? editBackground! : background!, ScaleMode.StretchToFill);
+        GUI.color = previousColor;
     }
 
     private OverlayConfig LoadConfig()
@@ -252,46 +296,71 @@ public sealed class ClockMod : MelonMod
 
         GUI.Label(new Rect(x + 16f, y + 28f, MenuWidth - 32f, 22f), "Press G to close - drag boxes with the mouse", headerStyle);
 
-        GUI.Label(new Rect(x + 22f, y + 66f, 120f, 24f), "Clock:", menuLabelStyle);
-        var clockEnabled = GUI.Toggle(new Rect(x + 160f, y + 66f, 120f, 24f), config.Clock.Enabled, config.Clock.Enabled ? "  On" : "  Off");
+        GUI.Label(new Rect(x + 22f, y + 66f, 94f, 24f), "Clock:", menuLabelStyle);
+        var clockEnabled = GUI.Toggle(new Rect(x + 120f, y + 66f, 100f, 24f), config.Clock.Enabled, config.Clock.Enabled ? "  On" : "  Off");
         if (clockEnabled != config.Clock.Enabled)
         {
             config.Clock.Enabled = clockEnabled;
             SaveConfig();
         }
 
-        GUI.Label(new Rect(x + 22f, y + 96f, 120f, 24f), "Day Counter:", menuLabelStyle);
-        var dayEnabled = GUI.Toggle(new Rect(x + 160f, y + 96f, 120f, 24f), config.DayCounter.Enabled, config.DayCounter.Enabled ? "  On" : "  Off");
+        DrawOpacitySlider(new Rect(x + 22f, y + 96f, MenuWidth - 44f, 24f), "Clock box:", config.Clock);
+
+        GUI.Label(new Rect(x + 22f, y + 126f, 94f, 24f), "Day Counter:", menuLabelStyle);
+        var dayEnabled = GUI.Toggle(new Rect(x + 120f, y + 126f, 100f, 24f), config.DayCounter.Enabled, config.DayCounter.Enabled ? "  On" : "  Off");
         if (dayEnabled != config.DayCounter.Enabled)
         {
             config.DayCounter.Enabled = dayEnabled;
             SaveConfig();
         }
 
-        if (GUI.Button(new Rect(x + 22f, y + 132f, MenuWidth - 44f, 30f), "Reset positions"))
+        DrawOpacitySlider(new Rect(x + 22f, y + 156f, MenuWidth - 44f, 24f), "Day box:", config.DayCounter);
+
+        if (GUI.Button(new Rect(x + 22f, y + 192f, MenuWidth - 44f, 30f), "Reset positions"))
         {
             ApplyPreset(Corner.TopRight);
         }
 
-        GUI.Label(new Rect(x + 22f, y + 176f, MenuWidth - 44f, 20f), "Preset", menuLabelStyle);
-        if (GUI.Button(new Rect(x + 22f, y + 202f, 136f, 30f), "Top Left"))
+        GUI.Label(new Rect(x + 22f, y + 236f, MenuWidth - 44f, 20f), "Preset", menuLabelStyle);
+        if (GUI.Button(new Rect(x + 22f, y + 262f, 136f, 30f), "Top Left"))
         {
             ApplyPreset(Corner.TopLeft);
         }
 
-        if (GUI.Button(new Rect(x + 182f, y + 202f, 136f, 30f), "Top Right"))
+        if (GUI.Button(new Rect(x + 182f, y + 262f, 136f, 30f), "Top Right"))
         {
             ApplyPreset(Corner.TopRight);
         }
 
-        if (GUI.Button(new Rect(x + 22f, y + 238f, 136f, 30f), "Bottom Left"))
+        if (GUI.Button(new Rect(x + 22f, y + 298f, 136f, 30f), "Bottom Left"))
         {
             ApplyPreset(Corner.BottomLeft);
         }
 
-        if (GUI.Button(new Rect(x + 182f, y + 238f, 136f, 30f), "Bottom Right"))
+        if (GUI.Button(new Rect(x + 182f, y + 298f, 136f, 30f), "Bottom Right"))
         {
             ApplyPreset(Corner.BottomRight);
+        }
+    }
+
+    private void DrawOpacitySlider(Rect rect, string label, OverlayElement element)
+    {
+        GUI.Label(new Rect(rect.x, rect.y, 100f, rect.height), label, menuLabelStyle);
+        GUI.DrawTexture(new Rect(rect.x + 100f, rect.y + 12f, 140f, 4f), sliderBackground!, ScaleMode.StretchToFill);
+        var opacity = GUI.HorizontalSlider(
+            new Rect(rect.x + 100f, rect.y + 5f, 140f, 18f),
+            element.BackgroundOpacity,
+            0f,
+            1f,
+            sliderStyle!,
+            sliderThumbStyle!);
+        opacity = Mathf.Round(opacity * 100f) / 100f;
+        GUI.Label(new Rect(rect.x + 248f, rect.y, 48f, rect.height), $"{Mathf.RoundToInt(opacity * 100f)}%", menuLabelStyle);
+
+        if (!Mathf.Approximately(opacity, element.BackgroundOpacity))
+        {
+            element.BackgroundOpacity = opacity;
+            SaveConfig();
         }
     }
 
@@ -556,6 +625,8 @@ public sealed class ClockMod : MelonMod
             DayCounter ??= new OverlayElement(new OverlayPosition());
             Clock.Position ??= new OverlayPosition();
             DayCounter.Position ??= new OverlayPosition();
+            Clock.BackgroundOpacity = NormalizeOpacity(Clock.BackgroundOpacity);
+            DayCounter.BackgroundOpacity = NormalizeOpacity(DayCounter.BackgroundOpacity);
 
             if (!Clock.Position.IsConfigured)
             {
@@ -572,6 +643,13 @@ public sealed class ClockMod : MelonMod
             Clock.Position.Clamp(BoxWidth, BoxHeight);
             DayCounter.Position.Clamp(BoxWidth, DayBoxHeight);
         }
+
+        private static float NormalizeOpacity(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value)
+                ? DefaultBackgroundOpacity
+                : Mathf.Clamp01(value);
+        }
     }
 
     private sealed class OverlayElement
@@ -586,6 +664,7 @@ public sealed class ClockMod : MelonMod
         }
 
         public bool Enabled { get; set; } = true;
+        public float BackgroundOpacity { get; set; } = DefaultBackgroundOpacity;
         public OverlayPosition Position { get; set; } = new();
     }
 
