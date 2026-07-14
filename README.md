@@ -25,7 +25,7 @@ Schedule I\Mods\ClockOverlay.dll
 
 Start the game again. The clock appears in the top-right corner once the in-game time is available.
 
-Press `G` in-game to open the overlay edit menu. While the menu is open, drag the clock and day counter with the mouse, toggle them on or off, reset their positions, or move them to a corner preset.
+Press `G` in-game to open the overlay edit menu. While the menu is open, drag the clock and day counter with the mouse, toggle them on or off, adjust each box's background opacity, reset their positions, or move them to a corner preset. Set an opacity slider to `0%` for plain text with no background box.
 
 The mod creates and updates this config file automatically:
 
